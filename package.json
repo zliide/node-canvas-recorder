@@ -1,0 +1,18 @@
+{
+  "name": "canvas-recorder",
+  "version": "0.0.1",
+  "description": "An implementation of HTML canvas that records all operations for later playback.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zliide/node-canvas-recorder.git"
+  },
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/zliide/node-canvas-recorder/issues"
+  },
+  "homepage": "https://github.com/zliide/node-canvas-recorder#readme"
+}

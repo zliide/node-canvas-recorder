@@ -105,6 +105,32 @@ describe('recording canvas', () => {
             `_c1.drawImage(_cnvs0,100,100);`,
         ])
     })
+
+    it('can draw on image elements', () => {
+        const window = { document: new DummyDocument() } as any as Window
+        installCanvasRecorder(window, measureText)
+
+        const source = window.document.createElement('canvas')
+        const target = window.document.createElement('img')
+        window.document.append(target)
+        const sourceCanvas = source.getContext('2d')
+        sourceCanvas!.quadraticCurveTo(0, 1, 2, 3)
+        target.src = source.toDataURL()
+        let loaded = false
+        target.onload = () => {
+            loaded = true
+        }
+        assert.ok(loaded)
+
+        const script = scriptPlayingRecordedCanvases(window)
+        assert.deepStrictEqual(script.split('\r\n').filter(l => !!l), [
+            `const _cnvs0=document.createElement('canvas');`,
+            `const _c0=_cnvs0.getContext('2d');`,
+            `_c0.quadraticCurveTo(0,1,2,3);`,
+            `const _img0=document.getElementById('_img0');`,
+            `_img0.src=_cnvs0.toDataURL();`,
+        ])
+    })
 })
 
 interface Element {

@@ -26,8 +26,9 @@ describe('recording canvas', () => {
         canvas!.fillText(`Don't forget to escape!`, 4, 5)
 
         const script = scriptPlayingRecordedCanvases(window)
-        assert.deepStrictEqual(script.split('\r\n'), [
-            `const _c0=document.getElementById('_cnvs0').getContext('2d');`,
+        assert.deepStrictEqual(script.split('\r\n').filter(l => !!l), [
+            `const _cnvs0=document.getElementById('_cnvs0');`,
+            `const _c0=_cnvs0.getContext('2d');`,
             `_c0.quadraticCurveTo(0,1,2,3);`,
             `_c0.fillText('Don\\\'t forget to escape!',4,5);`,
         ])
@@ -47,13 +48,61 @@ describe('recording canvas', () => {
         canvas!.getExtension('WEBGL_lose_context')!.loseContext()
 
         const script = scriptPlayingRecordedCanvases(window)
-        assert.deepStrictEqual(script.split('\r\n'), [
-            "const _cgl0=document.getElementById('_cnvs0').getContext('webgl');",
+        assert.deepStrictEqual(script.split('\r\n').filter(l => !!l), [
+            "const _cnvs0=document.getElementById('_cnvs0');",
+            "const _cgl0=_cnvs0.getContext('webgl');",
             'const _cgl0_0 = _cgl0.createBuffer();',
             '_cgl0.bindBuffer(_cgl0.ARRAY_BUFFER, _cgl0_0);',
             '_cgl0.flush();',
             '_cgl0.bindBuffer(_cgl0.ARRAY_BUFFER, null);',
             "_cgl0.getExtension('WEBGL_lose_context').loseContext();",
+        ])
+    })
+
+    it('can draw in-dom canvas on canvas', () => {
+        const window = { document: new DummyDocument() } as any as Window
+        installCanvasRecorder(window, measureText)
+
+        const source = window.document.createElement('canvas')
+        window.document.append(source)
+        const target = window.document.createElement('canvas')
+        window.document.append(target)
+        const sourceCanvas = source.getContext('2d')
+        sourceCanvas!.quadraticCurveTo(0, 1, 2, 3)
+        const targetCanvas = target.getContext('2d')
+        targetCanvas?.drawImage(source, 100, 100)
+
+        const script = scriptPlayingRecordedCanvases(window)
+        assert.deepStrictEqual(script.split('\r\n').filter(l => !!l), [
+            `const _cnvs0=document.getElementById('_cnvs0');`,
+            `const _c0=_cnvs0.getContext('2d');`,
+            `_c0.quadraticCurveTo(0,1,2,3);`,
+            `const _cnvs1=document.getElementById('_cnvs1');`,
+            `const _c1=_cnvs1.getContext('2d');`,
+            `_c1.drawImage(_cnvs0,100,100);`,
+        ])
+    })
+
+    it('can draw free canvas on canvas', () => {
+        const window = { document: new DummyDocument() } as any as Window
+        installCanvasRecorder(window, measureText)
+
+        const source = window.document.createElement('canvas')
+        const target = window.document.createElement('canvas')
+        window.document.append(target)
+        const sourceCanvas = source.getContext('2d')
+        sourceCanvas!.quadraticCurveTo(0, 1, 2, 3)
+        const targetCanvas = target.getContext('2d')
+        targetCanvas?.drawImage(source, 100, 100)
+
+        const script = scriptPlayingRecordedCanvases(window)
+        assert.deepStrictEqual(script.split('\r\n').filter(l => !!l), [
+            `const _cnvs0=document.createElement('canvas');`,
+            `const _c0=_cnvs0.getContext('2d');`,
+            `_c0.quadraticCurveTo(0,1,2,3);`,
+            `const _cnvs1=document.getElementById('_cnvs1');`,
+            `const _c1=_cnvs1.getContext('2d');`,
+            `_c1.drawImage(_cnvs0,100,100);`,
         ])
     })
 })

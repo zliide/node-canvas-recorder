@@ -1,5 +1,5 @@
 import { Recording2DCanvas, TextMeasure } from './2d.js'
-import { notImplemented, stringArg } from './recording.js'
+import { notImplemented, RecordingContext, RecordingElement, stringArg } from './recording.js'
 import { RecordingWebGLCanvas } from './webgl.js'
 
 export function installCanvasRecorder(window: any, textMeasure: TextMeasure) {
@@ -8,18 +8,16 @@ export function installCanvasRecorder(window: any, textMeasure: TextMeasure) {
     window.document.createElement = (localName: string) => {
         const inner = innerElementFactory(localName)
         if (localName.toLowerCase() === 'canvas') {
-            let context: any
-            let contextType: string | undefined
+            let context: RecordingContext
             const ix = canvasIndex++
             inner.id = `_cnvs${ix}`
             inner.getContext = (type: string) => {
                 if (context) {
-                    if (type !== contextType) {
+                    if (type !== context.type()) {
                         return null
                     }
                     return context
                 }
-                contextType = type
                 switch (type) {
                     case '2d':
                         return context = new Recording2DCanvas(`_c${ix}`, inner, textMeasure)
@@ -44,19 +42,38 @@ const dummyGif = Buffer.from([0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00, 0x
 
 export function scriptPlayingRecordedCanvases(window: any) {
     let script = ''
+    const rendered = new Set<string>()
+    const inDom = new Set<string>()
     const canvasTags = window.document.getElementsByTagName('canvas')
     for (let ix = 0; ix !== canvasTags.length; ++ix) {
-        const canvas = canvasTags.item(ix)!
-        const context2D = canvas.getContext('2d')
-        const script2D = context2D?.script(canvas.id)
-        if (script2D) {
-            script += `const ${context2D.varName}=document.getElementById(${stringArg(canvas.id)}).getContext('2d');\r\n${script2D}\r\n`
-        }
-        const contextWebGL = canvas.getContext('webgl')
-        const scriptGL = contextWebGL?.script(canvas.id)
-        if (scriptGL) {
-            script += `const ${contextWebGL.varName}=document.getElementById(${stringArg(canvas.id)}).getContext('webgl');\r\n${scriptGL}\r\n`
-        }
+        inDom.add(canvasTags.item(ix)!.id)
     }
+    for (let ix = 0; ix !== canvasTags.length; ++ix) {
+        const canvasElement = canvasTags.item(ix)!
+        script += renderCanvasElement(inDom, rendered, canvasElement)
+    }
+    return script
+}
+
+function renderCanvasElement(inDom: Set<string>, rendered: Set<string>, element: RecordingElement) {
+    if (rendered.has(element.id)) {
+        return ''
+    }
+    const context = element.getContext('2d') ?? element.getContext('webgl')
+    let script = ''
+    for (const source of context.getSources()) {
+        script += renderCanvasElement(rendered, inDom, source)
+    }
+    const contextScript = context.script(element.id)
+    if (contextScript) {
+        if (inDom.has(element.id)) {
+            script += `const ${element.id}=document.getElementById(${stringArg(element.id)});\r\n`
+        } else {
+            script += `const ${element.id}=document.createElement('canvas');\r\n`
+        }
+        script += `const ${context.varName}=${element.id}.getContext('${context.type()}');\r\n`
+        script += `${contextScript}\r\n`
+    }
+    rendered.add(element.id)
     return script
 }

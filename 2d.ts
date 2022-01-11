@@ -1,4 +1,4 @@
-import { notImplemented, RecordingObject, stringArg } from './recording.js'
+import { notImplemented, RecordingContext, RecordingElement, RecordingObject, stringArg } from './recording.js'
 
 class RecordingCanvasGradient extends RecordingObject {
     constructor(ops: string[], varName: string) {
@@ -37,13 +37,20 @@ function imageArg(image: CanvasImageSource) {
     if (!image.id) {
         notImplemented('createPattern')
     }
-    return `document.getElementById(${stringArg(image.id)})`
+    return image.id
+}
+function asElement(image: CanvasImageSource) {
+    if ((image as any).getContext) {
+        return image as any as RecordingElement
+    }
+    return undefined
 }
 
 export type TextMeasure = (font: string, text: string) => { height: number, width: number, descent: number }
 
-export class Recording2DCanvas implements CanvasRenderingContext2D {
+export class Recording2DCanvas implements CanvasRenderingContext2D, RecordingContext {
     #ops: string[]
+    #sources: RecordingElement[]
     #textMeasure
     #varIx = 0
     readonly canvas: any
@@ -53,9 +60,16 @@ export class Recording2DCanvas implements CanvasRenderingContext2D {
         this.canvas = element
         this.varName = name
         this.#ops = []
+        this.#sources = []
         this.#textMeasure = textMeasure
     }
 
+    type() {
+        return '2d'
+    }
+    getSources() {
+        return this.#sources
+    }
     script() {
         return this.#ops.join('\r\n')
     }
@@ -198,6 +212,10 @@ export class Recording2DCanvas implements CanvasRenderingContext2D {
     }
     createPattern(image: CanvasImageSource, repetition: string | null) {
         const n = `${this.varName}_${this.#varIx++}`
+        const element = asElement(image)
+        if (element) {
+            this.#sources.push(element)
+        }
         this.#ops.push(`const ${n} = ${this.varName}.createPattern(${imageArg(image)},${repetition});`)
         return new RecordingCanvasPattern(this.#ops, n)
     }
@@ -278,7 +296,13 @@ export class Recording2DCanvas implements CanvasRenderingContext2D {
         this.#ops.push(`${this.varName}.globalCompositeOperation=${stringArg(value)};`)
         this.#globalCompositeOperation = value
     }
-    drawImage(image: CanvasImageSource, ...args: any[]) { this.#ops.push(`${this.varName}.drawImage(${imageArg(image)},${args.join(',')});`) }
+    drawImage(image: CanvasImageSource, ...args: any[]) {
+        const element = asElement(image)
+        if (element) {
+            this.#sources.push(element)
+        }
+        this.#ops.push(`${this.varName}.drawImage(${imageArg(image)},${args.join(',')});`)
+    }
     createImageData(): ImageData { notImplemented('createImageData') }
     getImageData(): ImageData { notImplemented('getImageData') }
     putImageData(image: ImageData, ...args: any[]) { this.#ops.push(`${this.varName}.putImageData({data:[],width:${image.width},height:${image.height}},${args.join(',')});`) }

@@ -15,3 +15,15 @@ export class RecordingObject {
 export function stringArg(arg: string) {
     return `'${arg.replace(/\\/g, '\\\\').replace(/'/g, '\\\'')}'`
 }
+
+export interface RecordingElement {
+    id: string
+    getContext(type: string): RecordingContext
+}
+
+export interface RecordingContext {
+    varName: string
+    type(): string
+    getSources(): RecordingElement[]
+    script(argName: string): string
+}

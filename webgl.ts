@@ -1,6 +1,6 @@
-import { notImplemented, RecordingObject } from './recording.js'
+import { notImplemented, RecordingContext, RecordingObject } from './recording.js'
 
-export class RecordingWebGLCanvas {
+export class RecordingWebGLCanvas implements RecordingContext {
     readonly canvas: HTMLCanvasElement
     readonly varName
     #ops: string[]
@@ -16,6 +16,12 @@ export class RecordingWebGLCanvas {
         }
     }
 
+    type() {
+        return 'webgl'
+    }
+    getSources() {
+        return []
+    }
     script() {
         return this.#ops.join('\r\n')
     }

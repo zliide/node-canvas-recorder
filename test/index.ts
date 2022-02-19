@@ -115,11 +115,12 @@ describe('recording canvas', () => {
         window.document.append(target)
         const sourceCanvas = source.getContext('2d')
         sourceCanvas!.quadraticCurveTo(0, 1, 2, 3)
-        target.src = source.toDataURL()
         let loaded = false
         target.onload = () => {
             loaded = true
         }
+        assert.ok(!loaded)
+        target.src = source.toDataURL()
         assert.ok(loaded)
 
         const script = scriptPlayingRecordedCanvases(window)
@@ -139,8 +140,30 @@ interface Element {
 
 class DummyDocument {
     #elements: Element[] = []
+    #loadHandlers: (() => void)[] = []
+
+    loadAll() {
+        this.#loadHandlers.forEach(h => h)
+        this.#loadHandlers.splice(0)
+    }
 
     createElement(localName: string): any {
+        if (localName === 'img') {
+            const handlers = this.#loadHandlers
+            let s = ''
+            return {
+                localName,
+                get src() {
+                    return s
+                },
+                set src(value) {
+                    s = value
+                },
+                set onload(value: () => void) {
+                    handlers.push(value)
+                },
+            }
+        }
         return { localName }
     }
     getElementsByTagName(tagName: string) {

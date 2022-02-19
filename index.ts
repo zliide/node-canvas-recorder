@@ -40,32 +40,42 @@ export function installCanvasRecorder(window: any, textMeasure: TextMeasure) {
                 break
             }
             case 'img': {
-                const ix = imageIndex++
-                inner.id = `_img${ix}`
-                let src = ''
                 const sources: any[] = []
                 inner.getSources = () => sources
                 let script: string | undefined
                 inner.script = () => script
-                Object.defineProperty(inner, 'src', {
-                    get() {
-                        return src
-                    },
-                    set(value: string) {
-                        if (value.startsWith(dataUrlPrefix)) {
-                            const sourceCanvasIndex = value.substring(dataUrlPrefix.length, value.indexOf(';', dataUrlPrefix.length))
-                            const canvas = dataUrlCanvases.get(Number(sourceCanvasIndex))
-                            if (canvas) {
-                                sources.push(canvas)
-                                script = (script ?? '') + `_img${ix}.src=_cnvs${sourceCanvasIndex}.toDataURL();\r\n`
+                const innerSrcGetter = inner.__lookupGetter__('src').bind(inner)
+                const innerSrcSetter = inner.__lookupSetter__('src').bind(inner)
+                const innerOnLoad = inner.__lookupSetter__('onload').bind(inner)
+                let onLoad = () => {/**/ }
+                Object.defineProperties(inner, {
+                    src: {
+                        configurable: true,
+                        get() {
+                            return innerSrcGetter()
+                        },
+                        set(value: string) {
+                            if (value.startsWith(dataUrlPrefix)) {
+                                const ix = imageIndex++
+                                inner.id = `_img${ix}`
+                                const sourceCanvasIndex = value.substring(dataUrlPrefix.length, value.indexOf(';', dataUrlPrefix.length))
+                                const canvas = dataUrlCanvases.get(Number(sourceCanvasIndex))
+                                if (canvas) {
+                                    sources.push(canvas)
+                                    script = (script ?? '') + `_img${ix}.src=_cnvs${sourceCanvasIndex}.toDataURL();\r\n`
+                                    onLoad()
+                                    return
+                                }
                             }
-                        }
-                        src = value
+                            innerSrcSetter(value)
+                        },
                     },
-                })
-                Object.defineProperty(inner, 'onload', {
-                    set(value: () => void) {
-                        value()
+                    onload: {
+                        configurable: true,
+                        set(handler: () => void) {
+                            onLoad = handler
+                            innerOnLoad(handler)
+                        },
                     },
                 })
                 break

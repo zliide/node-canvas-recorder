@@ -119,6 +119,9 @@ function renderCanvasElement(inDom: Set<string>, rendered: Set<string>, element:
     }
     const context = element.getContext('2d') ?? element.getContext('webgl')
     let script = ''
+    if (!context.getSources) {
+        return
+    }
     for (const source of context.getSources()) {
         script += renderCanvasElement(rendered, inDom, source)
     }
@@ -138,6 +141,9 @@ function renderCanvasElement(inDom: Set<string>, rendered: Set<string>, element:
 
 function renderImageElement(canvasesInDom: Set<string>, imagesInDom: Set<string>, rendered: Set<string>, element: any) {
     let script = ''
+    if (!element.getSources) {
+        return
+    }
     for (const source of element.getSources()) {
         script += renderCanvasElement(rendered, canvasesInDom, source)
     }

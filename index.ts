@@ -85,6 +85,29 @@ export function installCanvasRecorder(window: any, textMeasure: TextMeasure) {
     }
 }
 
+export function memoize(maxTexts: number, textMeasure: TextMeasure) {
+    const fonts = new Map<string, Map<string, { height: number, width: number, descent: number }>>()
+    return (font: string, text: string) => {
+        const memoizedTexts = fonts.get(font)
+        if (memoizedTexts) {
+            const memoizedSize = memoizedTexts.get(text)
+            if (memoizedSize) {
+                return memoizedSize
+            }
+            const computedSize = textMeasure(font, text)
+            if (memoizedTexts.size < maxTexts) {
+                memoizedTexts.set(text, computedSize)
+            }
+            return computedSize
+        }
+        const texts = new Map<string, { height: number, width: number, descent: number }>()
+        const computedSize = textMeasure(font, text)
+        texts.set(text, computedSize)
+        fonts.set(font, texts)
+        return computedSize
+    }
+}
+
 const dataUrlPrefix = 'data:image/gif+'
 const dummyGif = Buffer.from([0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00, 0x01, 0x00, 0x00, 0xff, 0x00, 0x2c, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x02, 0x00, 0x3b])
 

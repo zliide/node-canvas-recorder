@@ -100,8 +100,8 @@ export class Recording2DCanvas implements CanvasRenderingContext2D, RecordingCon
             actualBoundingBoxDescent: size.descent,
             actualBoundingBoxLeft: -1,
             actualBoundingBoxRight: size.width + 1,
-            fontBoundingBoxAscent: size.height,
-            fontBoundingBoxDescent: size.descent,
+            fontBoundingBoxAscent: size.height - size.descent + 1,
+            fontBoundingBoxDescent: size.descent + 1,
             width: size.width,
         }
     }

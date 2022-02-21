@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script>
+        const precision = 16
+        const typescript = true
+
+        const fontLoaders = [];
+        const fontFace = new FontFace('Arya', 'url(https://fonts.gstatic.com/s/arya/v17/ga6CawNG-HJdxU__-Ieq.woff2)', {});
+        fontLoaders.push(fontFace.load().then(function () { document.fonts.add(fontFace); }).catch(function (e) { console.error('Error loading font MaterialIcons'); console.error(e); }));
+
+        const fonts = [
+            {
+                family: 'Times', sizes: [16, 24], weights: ['normal', 'bold'],
+                alphabet: '£$€abcçĉdeéèêfghijklmnñoöpqrsßtuüvwxyzæøåABCĈDEFGHIJKLMNÑOÖPQRSTUÜVWXYZÆØÅ',
+            },
+            {
+                family: 'Arya', sizes: [16, 24], weights: ['normal', 'bold'],
+                alphabet: '£$€abcçĉdeéèêfghijklmnñoöpqrsßtuüvwxyzæøåABCĈDEFGHIJKLMNÑOÖPQRSTUÜVWXYZÆØÅ',
+            },
+        ]
+        const fallbacks = ['Arial', 'sans-serif']
+    </script>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            body {
+                background-color: #000;
+                color: #FFF;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <pre id="result"></pre>
+    <script type="application/javascript" src="text-measure.js"></script>
+</body>
+
+</html>

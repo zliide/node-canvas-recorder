@@ -6,7 +6,8 @@
   "files": [
     "*.js",
     "*.d.ts",
-    "*.js.map"
+    "utils/text-measure.html",
+    "utils/text-measure.js"
   ],
   "exports": {
     ".": "./index.js"
